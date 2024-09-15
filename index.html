@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A-Frame Game World</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <style>
+      body { margin: 0; }
+      #hud {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="hud">
+      <div>Money: <span id="money">0</span></div>
+      <button onclick="buyJetpack()">Buy Jetpack (50 Coins)</button>
+      <button onclick="toggleBuilding()">Toggle Building Mode</button>
+    </div>
+
+    <a-scene>
+      <!-- Sky and Ground -->
+      <a-sky color="#87CEEB"></a-sky>
+      <a-plane position="0 0 0" rotation="-90 0 0" width="100" height="100" color="#7CFC00"></a-plane>
+
+      <!-- HUB World -->
+      <a-box position="-3 1 -5" rotation="0 45 0" color="#4CC3D9"></a-box>
+      <a-text position="-1.5 2.5 -5" value="HUB" align="center"></a-text>
+
+      <!-- PARLOUR (Parkour World) -->
+      <a-box id="parlour-portal" position="0 1 -15" width="4" height="4" depth="1" color="#FF6347"></a-box>
+      <a-text position="0 3 -15" value="PARLOUR: Parkour World" align="center"></a-text>
+
+      <!-- Parkour World (hidden until teleport) -->
+      <a-entity id="parlour" visible="false">
+        <a-box position="0 1 -25" rotation="0 45 0" width="20" height="0.1" depth="20" color="#FFC65D"></a-box>
+        <a-text position="0 3 -25" value="PARKOUR Challenges" align="center"></a-text>
+        <!-- Parkour Obstacles -->
+        <a-box position="-1 1.5 -27" width="1" height="1" depth="1" color="red"></a-box>
+        <a-box position="1 2 -30" width="1" height="1" depth="1" color="green"></a-box>
+        <a-box position="0 3 -33" width="1" height="1" depth="1" color="blue"></a-box>
+      </a-entity>
+
+      <!-- Player -->
+      <a-entity id="player" camera wasd-controls position="0 1.6 3">
+        <a-entity cursor="rayOrigin: mouse" position="0 0 -1" geometry="primitive: ring" material="color: black; shader: flat"></a-entity>
+      </a-entity>
+
+      <!-- HUD -->
+      <a-entity id="jetpack" visible="false" geometry="primitive: box" material="color: blue" position="0 2 -2">
+        <a-text value="Jetpack Equipped" position="0 0.5 0"></a-text>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      let money = 0;
+      let jetpackEquipped = false;
+      let buildingMode = false;
+
+      // Money earning mechanic
+      setInterval(() => {
+        money += 10;
+        document.getElementById('money').innerText = money;
+      }, 2000); // Earn 10 coins every 2 seconds
+
+      // Buying Jetpack
+      function buyJetpack() {
+        if (money >= 50) {
+          money -= 50;
+          document.getElementById('money').innerText = money;
+          jetpackEquipped = true;
+          document.getElementById('jetpack').setAttribute('visible', true);
+          alert('Jetpack purchased! Press "J" to fly.');
+        } else {
+          alert('Not enough money to buy a jetpack!');
+        }
+      }
+
+      // Jetpack flying mechanics
+      document.addEventListener('keydown', (e) => {
+        const player = document.getElementById('player');
+        if (jetpackEquipped && e.key === 'j') {
+          let yPos = player.getAttribute('position').y;
+          yPos += 1; // Ascend
+          player.setAttribute('position', { x: player.getAttribute('position').x, y: yPos, z: player.getAttribute('position').z });
+        }
+      });
+
+      // Building Mode
+      function toggleBuilding() {
+        buildingMode = !buildingMode;
+        alert(buildingMode ? 'Building mode activated! Click to place blocks.' : 'Building mode deactivated.');
+      }
+
+      document.addEventListener('click', (e) => {
+        if (buildingMode) {
+          const player = document.getElementById('player');
+          const scene = document.querySelector('a-scene');
+          let playerPos = player.getAttribute('position');
+          
+          // Create a new block in front of the player
+          let newBlock = document.createElement('a-box');
+          newBlock.setAttribute('position', { x: playerPos.x, y: 1, z: playerPos.z - 2 });
+          newBlock.setAttribute('color', '#FFA500');
+          scene.appendChild(newBlock);
+        }
+      });
+
+      // Portal mechanics to teleport between HUB and PARLOUR
+      const parlourPortal = document.getElementById('parlour-portal');
+      parlourPortal.addEventListener('click', () => {
+        // Hide HUB world and show PARLOUR
+        document.querySelector('a-plane').setAttribute('visible', false);
+        document.getElementById('parlour').setAttribute('visible', true);
+        document.getElementById('player').setAttribute('position', { x: 0, y: 1.6, z: -25 });
+      });
+    </script>
+  </body>
+</html>
